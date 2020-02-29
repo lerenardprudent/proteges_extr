@@ -45,8 +45,9 @@ SELECT
   @varname_suffix := IF(@nominal, CONCAT(@spacer, @ith), '')                                       AS varname_suffix,
   @qname := CONCAT(fpei.name, @varname_suffix)                                                     AS qualname,
   @name2 := IF(@nominal, @qname, fpei.name)                                                        AS name2,
-  @shortened_name := PREG_REPLACE('/([^_])[aeiou]/', "$1",
-                           REPLACE(@name2, 'comportement_avec_partenaires_statut', 'caps'))        AS shortened,
+  @shortened_name := REGEXP_REPLACE(
+			REPLACE(@name2, 'comportement_avec_partenaires_statut', 'caps'),
+			'([^_])[aeiou]', "$1")        						   AS shortened,
   @namey := IF(CHAR_LENGTH(@name2) >= @minvarlengforshortening, @shortened_name, @name2)           AS namey,
   @namey_pr := CONCAT(@namey, @varprecissuffix)                                                    AS nameypr,
   @text := IF( fpei.text_fr IS NOT null, fpei.text_fr,
