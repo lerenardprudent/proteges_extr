@@ -1,6 +1,6 @@
 SET SESSION group_concat_max_len=99999;
-SET @headingid := "000000";
-SET @idsbj := @headingid;
+SET @headingid := "000000" COLLATE utf8_unicode_ci;
+SET @idsbj := @headingid COLLATE utf8_unicode_ci;
 SET @sep := ';';
 SET @sepreplacement := @sep;
 SET @rowterminator := 'FIN';
@@ -45,26 +45,26 @@ SELECT
   @varname_suffix := IF(@nominal, CONCAT(@spacer, @ith), '')                                       AS varname_suffix,
   @qname := CONCAT(fpei.name, @varname_suffix)                                                     AS qualname,
   @name2 := IF(@nominal, @qname, fpei.name)                                                        AS name2,
-  @shortened_name := REGEXP_REPLACE(
-			REPLACE(@name2, 'comportement_avec_partenaires_statut', 'caps'),
-			'([^_])[aeiou]', "$1")        						   AS shortened,
+  @shortened_name := PREG_REPLACE('/([^_])[aeiou]/', "$1",
+			REPLACE(@name2 COLLATE utf8_unicode_ci, 'comportement_avec_partenaires_statut', 'caps'))
+			        						   AS shortened,
   @namey := IF(CHAR_LENGTH(@name2) >= @minvarlengforshortening, @shortened_name, @name2)           AS namey,
   @namey_pr := CONCAT(@namey, @varprecissuffix)                                                    AS nameypr,
   @text := IF( fpei.text_fr IS NOT null, fpei.text_fr,
              IF(fpei.val IS NOT null, fpei.val, IF(fpei.pos IS NOT null, fpei.pos, @dunno)))       AS text,
-  @texte := IF(@answered, REPLACE(@text, @sep, @sepreplacement), @blank)                           AS texte,
-  @safeval := IF(@answered, REPLACE(fr.val, @sep, @sepreplacement), @blank)                        AS safeval,
-  @safeprecis := IF(@answered, REPLACE(fr.resp_precision, @sep, @sepreplacement), @blank)          AS precis,
+  @texte := IF(@answered, REPLACE(@text COLLATE utf8_unicode_ci, @sep, @sepreplacement), @blank)                           AS texte,
+  @safeval := IF(@answered, REPLACE(fr.val COLLATE utf8_unicode_ci, @sep, @sepreplacement), @blank)                        AS safeval,
+  @safeprecis := IF(@answered, REPLACE(fr.resp_precision COLLATE utf8_unicode_ci, @sep, @sepreplacement), @blank)          AS precis,
   @reponse := IF(@nominal, @texte, @safeval)                                                       AS rpnse,
   f.form_date                                                                                      AS date_formulaire,
   f.visit_month                                                                                    AS mois_visite,
   fpe.type_resp_inputs, fp.part_idx, fpe.elem_idx, fpei.id, fpei.name, fpei.pos, fpei.val,
   fpei.spss_var_name
 FROM
-(SELECT id, part_idx FROM form_parts WHERE form_type_id = @formtype) fp
+(SELECT id, part_idx FROM form_parts WHERE form_type_id = @formtype COLLATE utf8_unicode_ci) fp
 JOIN form_part_elems fpe ON fpe.form_part_id = fp.id AND fpe.type_resp_inputs IS NOT null
 JOIN form_part_elem_inputs fpei ON fpei.form_part_elem_id = fpe.id
-JOIN (SELECT id, idsubj FROM patients WHERE idsubj = @idsbj) p
+JOIN (SELECT id, idsubj FROM patients WHERE idsubj = @idsbj COLLATE utf8_unicode_ci) p
 LEFT JOIN forms f ON f.form_type_id = 1 AND f.patient_id = p.id
 LEFT JOIN form_responses fr ON fr.form_id = f.id AND fr.form_part_elem_input_id = fpei.id
 WHERE 1
