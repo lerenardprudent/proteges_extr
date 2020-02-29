@@ -1,9 +1,9 @@
 SET SESSION group_concat_max_len=99999;
 SET @headingid := "000000";;
-SET @idsbj := @headingid;;
+SET @idsbj := "109007";;
 SET @formtype := 1;
 SET @sep := ';';
-SET @sepreplacement := @sep;
+SET @sepreplacement := '|';
 SET @rowterminator := 'FIN';
 SET @varprecissuffix := '_pr';
 SET @blank := '';
@@ -52,9 +52,9 @@ SELECT
   @namey_pr := CONCAT(@namey, @varprecissuffix)                                                    AS nameypr,
   @text := IF( fpei.text_fr IS NOT null, fpei.text_fr,
              IF(fpei.val IS NOT null, fpei.val, IF(fpei.pos IS NOT null, fpei.pos, @dunno)))       AS text,
-  @texte := IF(@answered, REPLACE(@text, @sep, @sepreplacement), @blank)                           AS texte,
-  @safeval := IF(@answered, REPLACE(fr.val, @sep, @sepreplacement), @blank)                        AS safeval,
-  @safeprecis := IF(@answered, REPLACE(fr.resp_precision, @sep, @sepreplacement), @blank)          AS precis,
+  @texte := IF(fr.id IS NOT NULL, REPLACE(@text, @sep, @sepreplacement), @blank)                           AS texte,
+  @safeval := IF(fr.id IS NOT NULL, REPLACE(fr.val, @sep, @sepreplacement), @blank)                        AS safeval,
+  @safeprecis := IF(fr.id IS NOT NULL, REPLACE(fr.resp_precision, @sep, @sepreplacement), @blank)          AS precis,
   @reponse := IF(fpe.type_resp_inputs IN ('cb', 'r', 'c') AND
                 (fpei.text_fr IS NOT null OR fpei.val IS NOT null) AND
                 fpei.name NOT like '%nom' AND fpei.name NOT like '%name', @texte, @safeval)        AS rpnse,
