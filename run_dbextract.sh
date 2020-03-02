@@ -17,9 +17,13 @@ REGEX_FUNC_DEFAULT=$REGEX_FUNC
 USE_COLLATED_MYSQL_FILE=./use_collated.sh
 USE_COLLATED=0
 
-source $CREDENTIALS_FILE
-source $REGEX_FUNC_FILE
-source $USE_COLLATED_MYSQL_FILE
+sourceFile() {
+    [[ -f "$1" ]] && source "$1"
+}
+
+sourceFile $CREDENTIALS_FILE
+sourceFile $REGEX_FUNC_FILE
+sourceFile $USE_COLLATED_MYSQL_FILE
 
 reset_file=1
 if [ $reset_file -eq 1 ] ; then
