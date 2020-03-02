@@ -1,5 +1,7 @@
 *.csv
 *.log
 *.sql
+*.swp
 cred.sh
 regex_func.sh
+use_collated.sh
