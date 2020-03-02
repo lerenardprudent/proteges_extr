@@ -70,12 +70,11 @@ do
 	echo $SED_SUBST_PRE_CMD
 	eval $SED_SUBST_PRE_CMD
 	
-	SED_SUBST_W_COLLATE="$SED_PAT_ID_SUBSTS ; s/[^_]REPLACE[(][a-z0-9.@_]\+/\0 $UTF8_COLLATE/g; s/;;/ $UTF8_COLLATE;/g; s/WHERE [a-z_]\+ = @[a-z]\+/\0 $UTF8_COLLATE/g"
-   	SED_SUBST_CMD="$SED \"$SED_SUBST_W_COLLATE\" $MYSQLQUERYFILE > $INSTMYSQLCOLLATEFILE" #Copy MYSQL query template and substitute in patient id
-	echo $SED_SUBST_CMD
-	eval $SED_SUBST_CMD
-   	
 	if [ $USE_COLLATED -eq 1 ] ; then
+		SED_SUBST_W_COLLATE="$SED_PAT_ID_SUBSTS ; s/[^_]REPLACE[(][a-z0-9.@_]\+/\0 $UTF8_COLLATE/g; s/;;/ $UTF8_COLLATE;/g; s/WHERE [a-z_]\+ = @[a-z]\+/\0 $UTF8_COLLATE/g"
+		SED_SUBST_CMD="$SED \"$SED_SUBST_W_COLLATE\" $MYSQLQUERYFILE > $INSTMYSQLCOLLATEFILE" #Copy MYSQL query template and substitute in patient id
+		echo $SED_SUBST_CMD
+		eval $SED_SUBST_CMD
 		INSTMYSQLFILE=$INSTMYSQLCOLLATEFILE
 	fi
 
