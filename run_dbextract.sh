@@ -49,7 +49,7 @@ VALIDPIDREGEX="[0-9]{6}"
 CONVERTFROMUTF8CMD="iconv -f UTF-8 -t ISO-8859-1//TRANSLIT"
 HEADING_ID_PLACEHOLDER='@headingid;'
 INTERMED_OUT_FILE=intermed.csv
-MYSQL_CMD="mysql --default-character-set=utf8 -B -u $DBUSR -p$DBPWD $DBNAM"
+MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
 UTF8_COLLATE="COLLATE utf8_unicode_ci"
 
 echo "START    -------- {0.00%, $PATIENTNO/$PATIENTTOTAL, $STARTTIME}"  >> $LOGFILE #Write start time to log file
@@ -77,6 +77,7 @@ do
 		echo $SED_SUBST_CMD
 		eval $SED_SUBST_CMD
 		INSTMYSQLFILE=$INSTMYSQLCOLLATEFILE
+		MYSQL_CMD="$MYSQL_CMD --default-character-set=utf8"
 	fi
 
 	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
