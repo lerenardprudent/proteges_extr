@@ -23,6 +23,10 @@ sourceFile() {
     [[ -f "$1" ]] && source "$1"
 }
 
+formatLogFileEntry() {
+	PRINTF_CMD="LANG=C printf '(%6s) %10s {%6.2f%%, %3d/%3d, %16s}' $1 $2 $3 $4 $5 $6"
+	eval $PRINTF_CMD
+}
 sourceFile $CREDENTIALS_FILE
 sourceFile $REGEX_FUNC_FILE
 sourceFile $USE_COLLATED_MYSQL_FILE
@@ -57,10 +61,10 @@ INTERMED_OUT_FILE=intermed.csv
 MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
 UTF8_COLLATE="COLLATE utf8_unicode_ci"
 
-echo "START    -------- {0.00%, $PATIENTNO/$PATIENTTOTAL, $STARTTIME}"  >> $LOGFILE #Write start time to log file
+echo $(formatLogFileEntry "START" "00:00:00" 0 $PATIENTNO $PATIENTTOTAL $STARTTIME) >> $LOGFILE #Write start time to log file
 while read -r -n 6 PATIENTID
 do
-   $LOGFILEENTRY=
+   LOGFILEENTRY=""
    if [[ $PATIENTID =~ $VALIDPIDREGEX ]] ; then
    	echo
    	echo "=============="
@@ -109,16 +113,21 @@ do
 	#PREDICTEDENDTIME=$(eval $CALCPREDICTEDENDTIMECMD)
    	#PREDICTEDENDTIMESTAMP=$(timestamp "$PREDICTEDENDTIME")
    	#PREDICTEDTIMELEFT=$(($PREDICTEDENDTIMESTAMP-$CURRENTTIMESTAMP))
-   	#ITERATIONTIMETAKENSTR=$(convertsecs $ITERATIONTIMETAKEN)
-   	LOGFILEENTRY="($PATIENTID) $ITERATIONTIMETAKENSTR {$PROGRESS%, $PATIENTNO/$PATIENTTOTAL, $CURRENTTIME"
+   	ITERATIONTIMETAKENSTR=$(convertsecs $ITERATIONTIMETAKEN)
+	
    	#if [ $PATIENTNO -lt $PATIENTTOTAL ]; then
       	#   LOGFILEENTRY="$LOGFILEENTRY, END: $PREDICTEDENDTIME [+$(convertsecs $PREDICTEDTIMELEFT)]"
    	#fi
-   	#LOGFILEENTRY="$LOGFILEENTRY}"
+   	
+	LOGFILEENTRY=$(formatLogFileEntry $PATIENTID $ITERATIONTIMETAKENSTR $PROGRESS $PATIENTNO $PATIENTTOTAL $CURRENTTIME)
+   
    #else
       	#echo "*** Ignoring entry \"$PATIENTID\" ***"
       	#LOGFILEENTRY="($PATIENTID) 00:00:00 === IGNORED ==="
    fi
-   [[ ! -z $LOGFILEENTRY ]] && echo $LOGFILEENTRY >> $LOGFILE
+   
+   if [ ! -z "$LOGFILEENTRY" ]; then
+		echo $LOGFILEENTRY >> $LOGFILE
+   fi
 done < "$PATIENTIDSFILE"
 printf "============================\nTOTAL ELAPSED TIME: %s\n============================" $(convertsecs $TIMETAKEN) >> $LOGFILE
