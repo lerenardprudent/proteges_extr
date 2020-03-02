@@ -8,7 +8,9 @@ TEMPTIMEFILE=time.out
 LOGFILE=lg_dbextract.log
 SEPARATOR=';'
 REPLACEMENTSEPARATOR='|'
+PATIENTNO=0
 PATIENTIDSFILE=testpatids
+PATIENTTOTAL=$(wc -l $PATIENTIDSFILE | awk '{print $1}')
 RM='/bin/rm -f'
 CREDENTIALS_FILE=./cred.sh
 REGEX_FUNC_FILE=./regex_func.sh
@@ -40,8 +42,6 @@ convertsecs() {
  printf "%02d:%02d:%02d\n" $h $m $s
 }
 
-PATIENTNO=0
-PATIENTTOTAL=$(wc -l $PATIENTIDSFILE | awk '{print $1}')
 DATETIMECMD='date +"%D %T"'
 STARTTIME=$(eval $DATETIMECMD)
 STARTTIMESTAMP=$(timestamp "$STARTTIME")
@@ -60,6 +60,7 @@ UTF8_COLLATE="COLLATE utf8_unicode_ci"
 echo "START    -------- {0.00%, $PATIENTNO/$PATIENTTOTAL, $STARTTIME}"  >> $LOGFILE #Write start time to log file
 while read -r -n 6 PATIENTID
 do
+   $LOGFILEENTRY=
    if [[ $PATIENTID =~ $VALIDPIDREGEX ]] ; then
    	echo
    	echo "=============="
@@ -113,11 +114,11 @@ do
    	#if [ $PATIENTNO -lt $PATIENTTOTAL ]; then
       	#   LOGFILEENTRY="$LOGFILEENTRY, END: $PREDICTEDENDTIME [+$(convertsecs $PREDICTEDTIMELEFT)]"
    	#fi
-   	LOGFILEENTRY="$LOGFILEENTRY}"
+   	#LOGFILEENTRY="$LOGFILEENTRY}"
    #else
       	#echo "*** Ignoring entry \"$PATIENTID\" ***"
       	#LOGFILEENTRY="($PATIENTID) 00:00:00 === IGNORED ==="
    fi
-   echo $LOGFILEENTRY >> $LOGFILE
+   [[ ! -z $LOGFILEENTRY ]] && echo $LOGFILEENTRY >> $LOGFILE
 done < "$PATIENTIDSFILE"
 printf "============================\nTOTAL ELAPSED TIME: %s\n============================" $(convertsecs $TIMETAKEN) >> $LOGFILE
