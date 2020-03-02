@@ -61,7 +61,7 @@ INTERMED_OUT_FILE=intermed.csv
 MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
 UTF8_COLLATE="COLLATE utf8_unicode_ci"
 
-echo $(formatLogFileEntry "START" "00:00:00" 0 $PATIENTNO $PATIENTTOTAL $STARTTIME) >> $LOGFILE #Write start time to log file
+$(formatLogFileEntry "START" "00:00:00" 0 $PATIENTNO $PATIENTTOTAL $STARTTIME) >> $LOGFILE #Write start time to log file
 while read -r -n 6 PATIENTID
 do
    LOGFILEENTRY=""
