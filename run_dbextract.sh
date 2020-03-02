@@ -12,7 +12,8 @@ PATIENTIDSFILE=testpatids
 RM='/bin/rm -f'
 CREDENTIALS_FILE=./cred.sh
 REGEX_FUNC_FILE=./regex_func.sh
-REGEX_FUNC_DEFAULT=PREG_REPLACE
+REGEX_FUNC=PREG_REPLACE
+REGEX_FUNC_DEFAULT=$REGEX_FUNC
 USE_COLLATED_MYSQL_FILE=./use_collated.sh
 USE_COLLATED=0
 
@@ -65,7 +66,7 @@ do
 	
 	SED_PAT_ID_SUBSTS="s/$HEADING_ID_PLACEHOLDER/\\\"$PATIENTID\\\";/g; s/';'/'\\$SEPARATOR'/g; s/\(@sepreplacement := \)[^;]*;/\1\\'$REPLACEMENTSEPARATOR';/g; s/IF[(]@answered/IF(fr.id IS NOT NULL/g"
 	if [ $REGEX_FUNC != $REGEX_FUNC_DEFAULT ] ; then
-		SED_PAT_ID_SUBSTS="$SED_PAT_ID_SUBSTS ; s/\(PREG_REPLACE\)[(]\([^,]\+\),\([^,]\+\), \([^)]\+\)[)]/$REGEX_FUNC(\4,\2,\3)/g"
+		SED_PAT_ID_SUBSTS="$SED_PAT_ID_SUBSTS ; s/\($REGEX_FUNC_DEFAULT\)[(]\([^,]\+\),\([^,]\+\), \([^)]\+\)[)]/$REGEX_FUNC(\4,\2,\3)/g"
 	fi
 	SED_SUBST_PRE_CMD="$SED \"$SED_PAT_ID_SUBSTS\" $MYSQLQUERYFILE > $INSTMYSQLFILE"
 	echo $SED_SUBST_PRE_CMD
