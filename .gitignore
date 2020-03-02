@@ -1,4 +1,5 @@
 *.csv
 *.log
-pma_inst_extract_pat.sql
-inst_extract_pat.sql
+*.sql
+cred.sh
+regex_func.sh

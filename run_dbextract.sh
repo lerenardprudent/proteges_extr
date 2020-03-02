@@ -1,9 +1,9 @@
 #! /bin/bash
 
-MYSQLQUERYFILE=templ_extract_pat.sql
+MYSQLQUERYFILE=templ_extract_pat.mysql
 MYSQLOUTFILE=extraction.csv
-INSTMYSQLFILE=inst_extract.sql
-INSTMYSQL4PHPMYADMINFILE=phpmyadmin_inst_extract_pat.sql
+INSTMYSQLFILE=inst_extract_pat.sql
+INSTMYSQLCOLLATEFILE=inst_collate_extract_pat.sql
 TEMPTIMEFILE=time.out
 LOGFILE=lg_dbextract.log
 SEPARATOR=';'
@@ -11,8 +11,13 @@ REPLACEMENTSEPARATOR='|'
 PATIENTIDSFILE=testpatids
 RM='/bin/rm -f'
 CREDENTIALS_FILE=./cred.sh
+REGEX_FUNC_FILE=./regex_func.sh
+USE_COLLATED_MYSQL_FILE=./use_collated.sh
+REGEX_FUNC_DEFAULT=PREG_REPLACE
 
 source $CREDENTIALS_FILE
+source $REGEX_FUNC_FILE
+source $USE_COLLATED_MYSQL_FILE
 
 reset_file=1
 if [ $reset_file -eq 1 ] ; then
@@ -56,20 +61,32 @@ do
    	echo "=============="
 	echo
    	((PATIENTNO=PATIENTNO+1))
+	
 	SED_PAT_ID_SUBSTS="s/$HEADING_ID_PLACEHOLDER/\\\"$PATIENTID\\\";/g; s/';'/'\\$SEPARATOR'/g; s/\(@sepreplacement := \)[^;]*;/\1\\'$REPLACEMENTSEPARATOR';/g; s/IF[(]@answered/IF(fr.id IS NOT NULL/g"
-   	SED_SUBST_PRE_CMD="$SED \"$SED_PAT_ID_SUBSTS\" $MYSQLQUERYFILE > $INSTMYSQL4PHPMYADMINFILE"
+	if [ $REGEX_FUNC != $REGEX_FUNC_DEFAULT ] ; then
+		SED_PAT_ID_SUBSTS="$SED_PAT_ID_SUBSTS ; s/\(PREG_REPLACE\)[(]\([^,]\+\),\([^,]\+\), \([^)]\+\)[)]/$REGEX_FUNC(\4,\2,\3)/g"
+	fi
+	SED_SUBST_PRE_CMD="$SED \"$SED_PAT_ID_SUBSTS\" $MYSQLQUERYFILE > $INSTMYSQLFILE"
+	echo $SED_SUBST_PRE_CMD
 	eval $SED_SUBST_PRE_CMD
-	SED_PAT_ID_SUBSTS="$SED_PAT_ID_SUBSTS ; s/[^_]REPLACE[(][a-z0-9.@_]\+/\0 $UTF8_COLLATE/g; s/;;/ $UTF8_COLLATE;/g; s/WHERE [a-z_]\+ = @[a-z]\+/\0 $UTF8_COLLATE/g"
-   	SUBST_PAT_IDS_CMD="$SED \"$SED_PAT_ID_SUBSTS\" $MYSQLQUERYFILE > $INSTMYSQLFILE" #Copy MYSQL query template and substitute in patient id
-   	echo $SUBST_PAT_IDS_CMD
-	eval $SUBST_PAT_IDS_CMD
-   	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
+	
+	SED_SUBST_W_COLLATE="$SED_PAT_ID_SUBSTS ; s/[^_]REPLACE[(][a-z0-9.@_]\+/\0 $UTF8_COLLATE/g; s/;;/ $UTF8_COLLATE;/g; s/WHERE [a-z_]\+ = @[a-z]\+/\0 $UTF8_COLLATE/g"
+   	SED_SUBST_CMD="$SED \"$SED_SUBST_W_COLLATE\" $MYSQLQUERYFILE > $INSTMYSQLCOLLATEFILE" #Copy MYSQL query template and substitute in patient id
+	echo $SED_SUBST_CMD
+	eval $SED_SUBST_CMD
+   	
+	if [ $USE_COLLATED -eq 1 ] ; then
+		INSTMYSQLFILE=$INSTMYSQLCOLLATEFILE
+	fi
+
+	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
 	CMD2="cat $INTERMED_OUT_FILE | while read; do $SED '$SEDTRANSFORMATIONS' | $CONVERTFROMUTF8CMD; done >> $MYSQLOUTFILE" #Shell command to run MYSQL query and clean up output
    	echo "($PATIENTID) $CMD1"
    	eval $CMD1
 	echo $CMD2
 	eval $CMD2
-   	CALCPROGRESSCMD="awk 'BEGIN{printf \"%.2f\", "$PATIENTNO*"100 / $PATIENTTOTAL}'"
+   	
+	CALCPROGRESSCMD="awk 'BEGIN{printf \"%.2f\", "$PATIENTNO*"100 / $PATIENTTOTAL}'"
    	PROGRESS=$(eval $CALCPROGRESSCMD)
    	CURRENTTIME=$(eval $DATETIMECMD)
    	if [ ! -z "$CURRENTTIMESTAMP" ] ; then
