@@ -1,0 +1,1 @@
+SELECT CONCAT("VARIABLE LABELS ", spss_var_name, " '", qualname, "'.") FROM
