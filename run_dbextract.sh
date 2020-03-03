@@ -60,8 +60,15 @@ HEADING_ID_PLACEHOLDER='@headingid;'
 INTERMED_OUT_FILE=intermed.csv
 MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
 UTF8_COLLATE="COLLATE utf8_unicode_ci"
+RECODE_VARS_SQL_FRAG_FILE=frag_recode_vars.sql
+RECODE_VARS_FRAG=$(cat $RECODE_VARS_SQL_FRAG_FILE | tr '\r\n' ' ' | tr '\r' ' ' | sed 's/\//\\\//g; s/"/\\"/g; s/\@/\\@/g')
+RECODE_VARS_SQL_FILE=recode_vars.sql
+PERL_SUBST="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s"
+PERL_SUBST_CMD="perl -i.orig -p0e '$PERL_SUBST' $RECODE_VARS_SQL_FILE"
+echo $PERL_SUBST_CMD
 
-$(formatLogFileEntry "START" "00:00:00" 0 $PATIENTNO $PATIENTTOTAL $STARTTIME) >> $LOGFILE #Write start time to log file
+LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME"
+eval $LOG_FIRST_LINE_CMD >> $LOGFILE #Write start time to log file
 while read -r -n 6 PATIENTID
 do
    LOGFILEENTRY=""
@@ -89,7 +96,7 @@ do
 		INSTMYSQLFILE=$INSTMYSQLCOLLATEFILE
 		MYSQL_CMD="$MYSQL_CMD --default-character-set=utf8"
 	fi
-
+	
 	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
 	CMD2="cat $INTERMED_OUT_FILE | while read; do $SED '$SEDTRANSFORMATIONS' | $CONVERTFROMUTF8CMD; done >> $MYSQLOUTFILE" #Shell command to run MYSQL query and clean up output
    	echo "($PATIENTID) $CMD1"
@@ -131,3 +138,6 @@ do
    fi
 done < "$PATIENTIDSFILE"
 printf "============================\nTOTAL ELAPSED TIME: %s\n============================" $(convertsecs $TIMETAKEN) >> $LOGFILE
+
+cp $INSTMYSQLFILE $RECODE_VARS_SQL_FILE
+eval $PERL_SUBST_CMD
