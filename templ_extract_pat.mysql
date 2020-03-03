@@ -16,7 +16,7 @@ SET @vn := "";
 SET @pvn := "";
 SET @dunno := "??";
 SET @recode_suffix := "Rc";
-SET @rc := '';
+SET @rc := ' ';
 
 SELECT
   IF(heading_row, "idsubj", idsubj)                   AS idsubj,

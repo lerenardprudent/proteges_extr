@@ -60,12 +60,12 @@ HEADING_ID_PLACEHOLDER='@headingid;'
 INTERMED_OUT_FILE=intermed.csv
 MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
 UTF8_COLLATE="COLLATE utf8_unicode_ci"
-RECODE_VARS_SQL_FRAG_FILE=frag_recode_vars.sql
+RECODE_VARS_SQL_FRAG_FILE=frag_recode_vars.mysql
 RECODE_VARS_FRAG=$(cat $RECODE_VARS_SQL_FRAG_FILE | tr '\r\n' ' ' | tr '\r' ' ' | sed 's/\//\\\//g; s/"/\\"/g; s/\@/\\@/g')
 RECODE_VARS_SQL_FILE=recode_vars.sql
-PERL_SUBST="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s"
+ORDER_MYSQL_FRAG=$(sed -n "/ORDER BY.*$/p" $MYSQLQUERYFILE)
+PERL_SUBST="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL_FRAG/g"
 PERL_SUBST_CMD="perl -i.orig -p0e '$PERL_SUBST' $RECODE_VARS_SQL_FILE"
-echo $PERL_SUBST_CMD
 
 LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME"
 eval $LOG_FIRST_LINE_CMD >> $LOGFILE #Write start time to log file
@@ -140,4 +140,5 @@ done < "$PATIENTIDSFILE"
 printf "============================\nTOTAL ELAPSED TIME: %s\n============================" $(convertsecs $TIMETAKEN) >> $LOGFILE
 
 cp $INSTMYSQLFILE $RECODE_VARS_SQL_FILE
+echo $PERL_SUBST_CMD
 eval $PERL_SUBST_CMD

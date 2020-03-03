@@ -1,0 +1,8 @@
+SELECT
+	CONCAT(
+		"AUTORECODE ", spss_var_name, " /INTO ", spss_var_name, @recode_suffix, " /PRINT.", @rc,
+		"ADD FILES FILE */KEEP idsubj TO ", spss_var_name, " ", spss_var_name, @recode_suffix, " ALL. EXECUTE.", @rc,
+		"DELETE VARIABLES ", spss_var_name, ".", @rc,
+		"RENAME VARIABLES (", spss_var_name, @recode_suffix, "=", spss_var_name, ").", @rc
+	) AS AUTORECODE_CMD
+FROM
