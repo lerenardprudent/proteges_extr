@@ -77,6 +77,7 @@ ADD_VAR_LABELS_SQL_FRAG_FILE=frag_add_var_labels.mysql
 ADD_VAR_LABELS_FRAG=$(cat $ADD_VAR_LABELS_SQL_FRAG_FILE | sed 's/\//\\\//g; s/"/\\"/g')
 PERL_SUBST_2="s/SELECT.*?FROM/$ADD_VAR_LABELS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL_FRAG/g"
 GEN_SPSS_ADD_VAR_LABELS_FILE_CMD="perl -i.orig -p0e \"$PERL_SUBST_2\" $ADD_VAR_LABELS_SQL_FILE"
+STD_SQL_FILE=std_baseline.sql
 
 LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME"
 eval $LOG_FIRST_LINE_CMD >> $LOGFILE #Write start time to log file
@@ -108,6 +109,10 @@ do
 		MYSQL_CMD="$MYSQL_CMD --default-character-set=utf8"
 	fi
 	
+	GEN_STD_SQL="sed \"s/^JOIN form_part_elem_inputs.*$/\0 JOIN std_vars sv ON fpei.name LIKE CONCAT(sv.varname, '%')/g; s/\(formtype :=\)\s[0-9]\+/\1 3/g\" $INSTMYSQLFILE > $STD_SQL_FILE"
+	echo $GEN_STD_SQL
+	eval $GEN_STD_SQL
+
 	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
 	CMD2="cat $INTERMED_OUT_FILE | while read; do $SED '$SEDTRANSFORMATIONS' | $CONVERTFROMUTF8CMD; done >> $MYSQLOUTFILE" #Shell command to run MYSQL query and clean up output
    	echo "($PATIENTID) $CMD1"
