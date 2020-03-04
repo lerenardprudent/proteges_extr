@@ -3,6 +3,7 @@
 *.sql
 *.swp
 *.orig
+*.sps
 cred.sh
 regex_func.sh
 use_collated.sh

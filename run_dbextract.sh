@@ -46,6 +46,12 @@ convertsecs() {
  printf "%02d:%02d:%02d\n" $h $m $s
 }
 
+printGenerateSpssFileCmd() {
+	OUTFILE=`basename $1 sql`
+	OUTFILE="${OUTFILE}sps"
+	 printf "** TO GENERATE '$OUTFILE': $MYSQL_CMD -N -e 'source $1' | sed 's/\./.\\\n/g' > $OUTFILE\n" 
+}
+	
 DATETIMECMD='date +"%D %T"'
 STARTTIME=$(eval $DATETIMECMD)
 STARTTIMESTAMP=$(timestamp "$STARTTIME")
@@ -71,8 +77,6 @@ ADD_VAR_LABELS_SQL_FRAG_FILE=frag_add_var_labels.mysql
 ADD_VAR_LABELS_FRAG=$(cat $ADD_VAR_LABELS_SQL_FRAG_FILE | sed 's/\//\\\//g; s/"/\\"/g')
 PERL_SUBST_2="s/SELECT.*?FROM/$ADD_VAR_LABELS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL_FRAG/g"
 GEN_SPSS_ADD_VAR_LABELS_FILE_CMD="perl -i.orig -p0e \"$PERL_SUBST_2\" $ADD_VAR_LABELS_SQL_FILE"
-
-echo $GEN_SPSS_ADD_VAR_LABELS_FILE_CMD
 
 LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME"
 eval $LOG_FIRST_LINE_CMD >> $LOGFILE #Write start time to log file
@@ -151,5 +155,8 @@ echo $GEN_SPSS_RECODE_VARS_FILE_CMD
 eval $GEN_SPSS_RECODE_VARS_FILE_CMD
 
 cp $INSTMYSQLFILE $ADD_VAR_LABELS_SQL_FILE
-
+echo $GEN_SPSS_ADD_VAR_LABELS_FILE_CMD
 eval $GEN_SPSS_ADD_VAR_LABELS_FILE_CMD
+
+printGenerateSpssFileCmd $RECODE_VARS_SQL_FILE
+printGenerateSpssFileCmd $ADD_VAR_LABELS_SQL_FILE
