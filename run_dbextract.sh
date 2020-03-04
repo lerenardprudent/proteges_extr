@@ -146,7 +146,7 @@ do
 done < "$PATIENTIDSFILE"
 printf "============================\nTOTAL ELAPSED TIME: %s\n============================" $(convertsecs $TIMETAKEN) >> $LOGFILE
 
-cp $INSTMYSQLFILE $ADD_VAR_LABELS_SQL_FILE
+cp $INSTMYSQLFILE $RECODE_VARS_SQL_FILE
 echo $GEN_SPSS_RECODE_VARS_FILE_CMD
 eval $GEN_SPSS_RECODE_VARS_FILE_CMD
 
