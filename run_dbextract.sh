@@ -88,7 +88,7 @@ STD_SQL_FILE=std_baseline.sql
 
 DO_SELECT_STD_VAR_EXTRACTION_INSTEAD=1
 if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
-	$FORM_TYPE_ID=3
+	FORM_TYPE_ID=3
 fi
 MYSQLOUTFILE=$(generateExtractionOutfileName)
 
