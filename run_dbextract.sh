@@ -1,7 +1,29 @@
 #! /bin/bash
 
+sourceFile() {
+    [[ -f "$1" ]] && source "$1"
+}
+
+generateExtractionOutfileName() {
+	CMD="printf \"extr_%s_%s_%s.csv\" `$MYSQL_CMD -N -e \"select code from form_types where id = $FORM_TYPE_ID\"` `date '+%Y-%m-%d'` `date '+%H:%M:%S'`"
+	eval $CMD
+}
+
+CREDENTIALS_FILE=./cred.sh
+REGEX_FUNC_FILE=./regex_func.sh
+REGEX_FUNC=PREG_REPLACE
+REGEX_FUNC_DEFAULT=$REGEX_FUNC
+USE_COLLATED_MYSQL_FILE=./use_collated.sh
+USE_COLLATED=0
+FORM_TYPE_ID=1
+
+sourceFile $CREDENTIALS_FILE
+sourceFile $REGEX_FUNC_FILE
+sourceFile $USE_COLLATED_MYSQL_FILE
+
+MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
+
 MYSQLQUERYFILE=templ_extract_pat.mysql
-MYSQLOUTFILE=extraction.csv
 INSTMYSQLFILE=inst_extract_pat.sql
 INSTMYSQLCOLLATEFILE=inst_collate_extract_pat.sql
 TEMPTIMEFILE=time.out
@@ -12,28 +34,14 @@ PATIENTNO=0
 PATIENTIDSFILE=testpatids
 PATIENTTOTAL=$(wc -l $PATIENTIDSFILE | awk '{print $1}')
 RM='/bin/rm -f'
-CREDENTIALS_FILE=./cred.sh
-REGEX_FUNC_FILE=./regex_func.sh
-REGEX_FUNC=PREG_REPLACE
-REGEX_FUNC_DEFAULT=$REGEX_FUNC
-USE_COLLATED_MYSQL_FILE=./use_collated.sh
-USE_COLLATED=0
-
-sourceFile() {
-    [[ -f "$1" ]] && source "$1"
-}
 
 formatLogFileEntry() {
 	PRINTF_CMD="LANG=C printf '(%6s) %10s {%6.2f%%, %3d/%3d, %16s}' $1 $2 $3 $4 $5 $6"
 	eval $PRINTF_CMD
 }
-sourceFile $CREDENTIALS_FILE
-sourceFile $REGEX_FUNC_FILE
-sourceFile $USE_COLLATED_MYSQL_FILE
 
 reset_file=1
 if [ $reset_file -eq 1 ] ; then
-   eval $RM $MYSQLOUTFILE
    eval $RM $LOGFILE
 fi
 
@@ -64,7 +72,6 @@ VALIDPIDREGEX="[0-9]{6}"
 CONVERTFROMUTF8CMD="iconv -f UTF-8 -t ISO-8859-1//TRANSLIT"
 HEADING_ID_PLACEHOLDER='@headingid;'
 INTERMED_OUT_FILE=intermed.csv
-MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
 UTF8_COLLATE="COLLATE utf8_unicode_ci"
 RECODE_VARS_SQL_FRAG_FILE=frag_recode_vars.mysql
 RECODE_VARS_FRAG=$(cat $RECODE_VARS_SQL_FRAG_FILE | tr '\r\n' ' ' | tr '\r' ' ' | sed 's/\//\\\//g; s/"/\\"/g; s/\@/\\@/g')
@@ -109,11 +116,20 @@ do
 		MYSQL_CMD="$MYSQL_CMD --default-character-set=utf8"
 	fi
 	
-	GEN_STD_SQL="sed \"s/^JOIN form_part_elem_inputs.*$/\0 JOIN std_vars sv ON fpei.name LIKE CONCAT(sv.varname, '%')/g; s/\(formtype :=\)\s[0-9]\+/\1 3/g\" $INSTMYSQLFILE > $STD_SQL_FILE"
-	echo $GEN_STD_SQL
-	eval $GEN_STD_SQL
-
-	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
+	MYSQLINFILE=$INSTMYSQLFILE
+	DO_SELECT_STD_VAR_EXTRACTION_INSTEAD=1
+	
+	if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
+		FORM_TYPE_ID=3
+		GEN_STD_SQL="sed \"s/^JOIN form_part_elem_inputs.*$/\0 JOIN std_vars sv ON fpei.name LIKE CONCAT(sv.varname, '%')/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g\" $INSTMYSQLFILE > $STD_SQL_FILE"
+		echo $GEN_STD_SQL
+		eval $GEN_STD_SQL
+		MYSQLINFILE=$STD_SQL_FILE
+	fi
+		
+	MYSQLOUTFILE=$(generateExtractionOutfileName)
+	
+	CMD1="$MYSQL_CMD -e 'source $MYSQLINFILE' > $INTERMED_OUT_FILE"
 	CMD2="cat $INTERMED_OUT_FILE | while read; do $SED '$SEDTRANSFORMATIONS' | $CONVERTFROMUTF8CMD; done >> $MYSQLOUTFILE" #Shell command to run MYSQL query and clean up output
    	echo "($PATIENTID) $CMD1"
    	eval $CMD1
