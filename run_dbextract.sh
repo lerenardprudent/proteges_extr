@@ -86,6 +86,12 @@ PERL_SUBST_2="s/SELECT.*?FROM/$ADD_VAR_LABELS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL
 GEN_SPSS_ADD_VAR_LABELS_FILE_CMD="perl -i.orig -p0e \"$PERL_SUBST_2\" $ADD_VAR_LABELS_SQL_FILE"
 STD_SQL_FILE=std_baseline.sql
 
+DO_SELECT_STD_VAR_EXTRACTION_INSTEAD=1
+if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
+	$FORM_TYPE_ID=3
+fi
+MYSQLOUTFILE=$(generateExtractionOutfileName)
+
 LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME"
 eval $LOG_FIRST_LINE_CMD >> $LOGFILE #Write start time to log file
 while read -r -n 6 PATIENTID
@@ -117,17 +123,13 @@ do
 	fi
 	
 	MYSQLINFILE=$INSTMYSQLFILE
-	DO_SELECT_STD_VAR_EXTRACTION_INSTEAD=1
-	
+		
 	if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
-		FORM_TYPE_ID=3
 		GEN_STD_SQL="sed \"s/^JOIN form_part_elem_inputs.*$/\0 JOIN std_vars sv ON fpei.name LIKE CONCAT(sv.varname, '%')/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g\" $INSTMYSQLFILE > $STD_SQL_FILE"
 		echo $GEN_STD_SQL
 		eval $GEN_STD_SQL
 		MYSQLINFILE=$STD_SQL_FILE
-	fi
-		
-	MYSQLOUTFILE=$(generateExtractionOutfileName)
+	fi	
 	
 	CMD1="$MYSQL_CMD -e 'source $MYSQLINFILE' > $INTERMED_OUT_FILE"
 	CMD2="cat $INTERMED_OUT_FILE | while read; do $SED '$SEDTRANSFORMATIONS' | $CONVERTFROMUTF8CMD; done >> $MYSQLOUTFILE" #Shell command to run MYSQL query and clean up output
