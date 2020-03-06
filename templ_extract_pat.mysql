@@ -68,7 +68,7 @@ FROM
 JOIN form_part_elems fpe ON fpe.form_part_id = fp.id AND fpe.type_resp_inputs IS NOT null
 JOIN form_part_elem_inputs fpei ON fpei.form_part_elem_id = fpe.id
 JOIN (SELECT id, idsubj FROM patients WHERE idsubj = @idsbj) p
-LEFT JOIN forms f ON f.form_type_id = 1 AND f.patient_id = p.id
+LEFT JOIN forms f ON f.form_type_id = @formtype AND f.patient_id = p.id
 LEFT JOIN form_responses fr ON fr.form_id = f.id AND fr.form_part_elem_input_id = fpei.id
 WHERE 1
 ) x
