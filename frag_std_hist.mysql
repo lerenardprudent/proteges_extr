@@ -1,0 +1,7 @@
+	@vn := concat(iz.var_name, '_', iz.idx) as vn,
+    @mc := max_occ,
+    @clust_name := (select IF(@mc > 1, group_concat(CONCAT(@vn, '_', id) ORDER BY id SEPARATOR ';'), @vn) from idxs where id <= @mc) clust_name,
+    @cval := fr.val as cval,
+    @cval2 := IF(@cval IS null, '', @cval) cval2,
+    @clust_val := CONCAT(@cval2, REPEAT(';', max_occ - length(@cval2) - 1 + length(replace(@cval2, ';', '')))) clust_val,
+	iz.idx

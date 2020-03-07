@@ -1,0 +1,109 @@
+-- phpMyAdmin SQL Dump
+-- version 4.9.2
+-- https://www.phpmyadmin.net/
+--
+-- Hôte : 127.0.0.1:3308
+-- Généré le :  sam. 07 mars 2020 à 00:37
+-- Version du serveur :  8.0.18
+-- Version de PHP :  7.3.12
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT = 0;
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de données :  `proteges`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `idxs`
+--
+
+DROP TABLE IF EXISTS `idxs`;
+CREATE TABLE IF NOT EXISTS `idxs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `var_name` varchar(20) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
+  `idx` int(11) NOT NULL,
+  `max_occ` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
+-- Déchargement des données de la table `idxs`
+--
+
+INSERT INTO `idxs` (`id`, `var_name`, `idx`, `max_occ`) VALUES
+(1, 'std_name', 1, 4),
+(2, 'std_symptom', 1, 3),
+(3, 'std_start_date', 1, 1),
+(4, 'std_end_date', 1, 1),
+(5, 'std_treatment', 1, 1),
+(6, 'std_treatment_name', 1, 1),
+(7, 'std_name', 2, 4),
+(8, 'std_symptom', 2, 3),
+(9, 'std_start_date', 2, 1),
+(10, 'std_end_date', 2, 1),
+(11, 'std_treatment', 2, 1),
+(12, 'std_treatment_name', 2, 1),
+(13, 'std_name', 3, 4),
+(14, 'std_symptom', 3, 3),
+(15, 'std_start_date', 3, 1),
+(16, 'std_end_date', 3, 1),
+(17, 'std_treatment', 3, 1),
+(18, 'std_treatment_name', 3, 1),
+(19, 'std_name', 4, 4),
+(20, 'std_symptom', 4, 3),
+(21, 'std_start_date', 4, 1),
+(22, 'std_end_date', 4, 1),
+(23, 'std_treatment', 4, 1),
+(24, 'std_treatment_name', 4, 1),
+(25, 'std_name', 5, 4),
+(26, 'std_symptom', 5, 3),
+(27, 'std_start_date', 5, 1),
+(28, 'std_end_date', 5, 1),
+(29, 'std_treatment', 5, 1),
+(30, 'std_treatment_name', 5, 1),
+(31, 'std_name', 6, 4),
+(32, 'std_symptom', 6, 3),
+(33, 'std_start_date', 6, 1),
+(34, 'std_end_date', 6, 1),
+(35, 'std_treatment', 6, 1),
+(36, 'std_treatment_name', 6, 1),
+(37, 'std_name', 7, 4),
+(38, 'std_symptom', 7, 3),
+(39, 'std_start_date', 7, 1),
+(40, 'std_end_date', 7, 1),
+(41, 'std_treatment', 7, 1),
+(42, 'std_treatment_name', 7, 1),
+(43, 'std_name', 8, 4),
+(44, 'std_symptom', 8, 3),
+(45, 'std_start_date', 8, 1),
+(46, 'std_end_date', 8, 1),
+(47, 'std_treatment', 8, 1),
+(48, 'std_treatment_name', 8, 1),
+(49, 'std_name', 9, 4),
+(50, 'std_symptom', 9, 3),
+(51, 'std_start_date', 9, 1),
+(52, 'std_end_date', 9, 1),
+(53, 'std_treatment', 9, 1),
+(54, 'std_treatment_name', 9, 1),
+(55, 'std_name', 10, 4),
+(56, 'std_symptom', 10, 3),
+(57, 'std_start_date', 10, 1),
+(58, 'std_end_date', 10, 1),
+(59, 'std_treatment', 10, 1),
+(60, 'std_treatment_name', 10, 1);
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

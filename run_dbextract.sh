@@ -5,7 +5,7 @@ sourceFile() {
 }
 
 generateExtractionOutfileName() {
-	CMD="printf \"extr_%s_%s_%s.csv\" `$MYSQL_CMD -N -e \"select code from form_types where id = $FORM_TYPE_ID\"` `date '+%Y-%m-%d'` `date '+%H%M%S'`"
+	CMD="printf \"extr_%s_%s_%s.csv\" `$MYSQL_CMD -N -e \"select code from form_types where id = $FORM_TYPE_ID\"` `date '+%Y-%m-%d'` `date '+%H~%M~%S'`"
 	eval $CMD
 }
 
@@ -29,6 +29,7 @@ sourceFile $DO_SELECT_STD_VAR_EXTRACTION_FILE
 sourceFile $DO__STD_HIST_EXTRACTION_FILE
 
 MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
+MYSQL_CMD_W_UTF_CHARSET="$MYSQL_CMD --default-character-set=utf8"
 
 MYSQLQUERYFILE=templ_extract_pat.mysql
 INSTMYSQLFILE=inst_extract_pat.sql
@@ -93,6 +94,11 @@ PERL_SUBST_2="s/SELECT.*?FROM/$ADD_VAR_LABELS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL
 GEN_SPSS_ADD_VAR_LABELS_FILE_CMD="perl -i.orig -p0e \"$PERL_SUBST_2\" $ADD_VAR_LABELS_SQL_FILE"
 STD_SQL_FILE=std_baseline.sql
 STD_HIST_SQL_FILE=std_hist.sql
+SELECT_STD_HIST_VARS_SQL_FRAG_FILE=frag_std_hist.mysql
+SELECT_STD_HIST_VARS_SQL_FRAG=$(cat $SELECT_STD_HIST_VARS_SQL_FRAG_FILE | tr '\r\n' ' ' | tr '\r' ' ' | sed 's/\//\\\//g; s/"/\\"/g; s/\@/\\@/g')
+
+echo "$SELECT_STD_HIST_VARS_SQL_FRAG"
+
 
 if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 	FORM_TYPE_ID=3
@@ -128,7 +134,7 @@ do
 		echo $SED_SUBST_CMD
 		eval $SED_SUBST_CMD
 		INSTMYSQLFILE=$INSTMYSQLCOLLATEFILE
-		MYSQL_CMD="$MYSQL_CMD --default-character-set=utf8"
+		MYSQL_CMD=$MYSQL_CMD_W_UTF_CHARSET
 	fi
 	
 	MYSQLINFILE=$INSTMYSQLFILE
@@ -139,10 +145,17 @@ do
 		eval $GEN_STD_SQL
 		MYSQLINFILE=$STD_SQL_FILE
 	elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
-		CONC="CONCAT( fpei.name, '_', idx)"
-		GEN_STD_HIST_SQL="sed \"s/^\(LEFT JOIN form_responses fr ON fr.form_id = f.id AND\).*$/\1 fr.var_name = $CONC/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g; s/\(\s\+@namey :=\).*$/\1 $CONC AS namey, idx,/g; s/^JOIN form_part_elem_inputs.*$/\0 JOIN idxs/g; s/^\(\s\+ORDER BY\).*$/\1 idx, pos/g\" $INSTMYSQLFILE > $STD_HIST_SQL_FILE"
+		CONC="CONCAT(fpei.name, '_', idx)"
+		CONC2="CONCAT(fpei.name, '_', idx, '_', idy)"
+		GEN_STD_HIST_SQL="sed \"s/^LEFT JOIN form_responses.*$/LEFT JOIN ( SELECT form_id, var_name, group_concat(val separator ';') val, 'dummy' id from form_responses group by form_id, var_name) fr ON fr.form_id = f.id and fr.var_name = concat(iz.var_name, '_', iz.idx)/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g; s/^JOIN form_part_elem_inputs.*$/\0 JOIN idxs iz ON fpei.name = iz.var_name/g; s/^\(\s\+ORDER BY\).*$/\1 idx, pos/g\" $INSTMYSQLFILE > $STD_HIST_SQL_FILE"
+		
 		echo $GEN_STD_HIST_SQL
 		eval $GEN_STD_HIST_SQL
+		
+		PERL_SUBST3_CMD="perl -i.orig -p0e \"s/\@vn := fpei.*?AS rpnse/$SELECT_STD_HIST_VARS_SQL_FRAG/s; s/GROUP_CONCAT.*?ORDER/GROUP_CONCAT(IF(heading_row, clust_name, clust_val) ORDER/s\" $STD_HIST_SQL_FILE"
+		echo $PERL_SUBST3_CMD
+		eval $PERL_SUBST3_CMD
+		
 		MYSQLINFILE=$STD_HIST_SQL_FILE
 	fi	
 	
