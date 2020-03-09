@@ -120,7 +120,7 @@ do
 	echo
    	((PATIENTNO=PATIENTNO+1))
 	
-	SED_PAT_ID_SUBSTS="s/$HEADING_ID_PLACEHOLDER/\\\"$PATIENTID\\\";/g; s/';'/'\\$SEPARATOR'/g; s/\(@sepreplacement := \)[^;]*;/\1\\'$REPLACEMENTSEPARATOR';/g; s/IF[(]@answered/IF(fr.id IS NOT NULL/g"
+	SED_PAT_ID_SUBSTS="s/$HEADING_ID_PLACEHOLDER/\\\"$PATIENTID\\\";/g; s/';'/'\\$SEPARATOR'/g; s/\(@sepreplacement := \)[^;]*;/\1\\'$REPLACEMENTSEPARATOR';/g; s/IF[(]@answered/IF(fr.id IS NOT NULL/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g"
 	if [ $REGEX_FUNC != $REGEX_FUNC_DEFAULT ] ; then
 		SED_PAT_ID_SUBSTS="$SED_PAT_ID_SUBSTS ; s/\($REGEX_FUNC_DEFAULT\)[(]\([^,]\+\),\([^,]\+\), \([^)]\+\)[)]/$REGEX_FUNC(\4,\2,\3)/g"
 	fi
