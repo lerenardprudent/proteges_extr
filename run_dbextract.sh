@@ -82,11 +82,24 @@ HEADING_ID_PLACEHOLDER='@headingid;'
 INTERMED_OUT_FILE=intermed.csv
 UTF8_COLLATE="COLLATE utf8_unicode_ci"
 RECODE_VARS_SQL_FRAG_FILE=frag_recode_vars.mysql
-RECODE_VARS_FRAG=$(cat $RECODE_VARS_SQL_FRAG_FILE | tr '\r\n' ' ' | tr '\r' ' ' | sed 's/\//\\\//g; s/"/\\"/g; s/\@/\\@/g')
+RECODE_VARS_SQL_FRAG_SED='s/\//\\\//g; s/"/\\"/g; s/\@/\\@/g'
+
+if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
+	FORM_TYPE_ID=3
+	RECODE_VARS_SQL_FRAG_SED="${RECODE_VARS_SQL_FRAG_SED}; s/spss_var_name/vn/g"
+elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
+	FORM_TYPE_ID=11
+fi
+
+READ_RECODE_VARS_FRAG_CMD="cat $RECODE_VARS_SQL_FRAG_FILE | tr '\r\n' ' ' | tr '\r' ' ' | sed '$RECODE_VARS_SQL_FRAG_SED'"
+echo $READ_RECODE_VARS_FRAG_CMD
+RECODE_VARS_FRAG=$(eval $READ_RECODE_VARS_FRAG_CMD)
 RECODE_VARS_SQL_FILE=recode_vars.sql
 ADD_VAR_LABELS_SQL_FILE=label_short_vars.sql
 ORDER_MYSQL_FRAG=$(sed -n "/ORDER BY.*$/p" $MYSQLQUERYFILE)
-PERL_SUBST_1="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL_FRAG/g"
+
+MYSQLOUTFILE=$(generateExtractionOutfileName)
+PERL_SUBST_1="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL_FRAG/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g"
 GEN_SPSS_RECODE_VARS_FILE_CMD="perl -i.orig -p0e '$PERL_SUBST_1' $RECODE_VARS_SQL_FILE"
 ADD_VAR_LABELS_SQL_FRAG_FILE=frag_add_var_labels.mysql
 ADD_VAR_LABELS_FRAG=$(cat $ADD_VAR_LABELS_SQL_FRAG_FILE | sed 's/\//\\\//g; s/"/\\"/g')
@@ -96,16 +109,6 @@ STD_SQL_FILE=std_baseline.sql
 STD_HIST_SQL_FILE=std_hist.sql
 SELECT_STD_HIST_VARS_SQL_FRAG_FILE=frag_std_hist.mysql
 SELECT_STD_HIST_VARS_SQL_FRAG=$(cat $SELECT_STD_HIST_VARS_SQL_FRAG_FILE | tr '\r\n' ' ' | tr '\r' ' ' | sed 's/\//\\\//g; s/"/\\"/g; s/\@/\\@/g')
-
-echo "$SELECT_STD_HIST_VARS_SQL_FRAG"
-
-
-if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
-	FORM_TYPE_ID=3
-elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
-	FORM_TYPE_ID=11
-fi
-MYSQLOUTFILE=$(generateExtractionOutfileName)
 
 LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME"
 eval $LOG_FIRST_LINE_CMD >> $LOGFILE #Write start time to log file
