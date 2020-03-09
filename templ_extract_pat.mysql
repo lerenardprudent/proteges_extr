@@ -46,7 +46,7 @@ SELECT
                 (fpei.text_fr IS NOT null OR fpei.val IS NOT null) AND
                 fpei.name NOT like '%nom' AND fpei.name NOT like '%name'                           AS nominal,
   @pvn := @vn,
-  @vn := fpei.name,
+  @vn := fpei.name AS vn,
   @ith := fpei.val                                                                                 AS ith,
   @addprecis := fpei.type_fld_details IS NOT null                                                  AS addprecis,
   @varname_suffix := IF(@nominal, CONCAT(@spacer, @ith), '')                                       AS varname_suffix,
