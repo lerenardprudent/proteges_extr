@@ -110,6 +110,10 @@ STD_HIST_SQL_FILE=std_hist.sql
 SELECT_STD_HIST_VARS_SQL_FRAG_FILE=frag_std_hist.mysql
 SELECT_STD_HIST_VARS_SQL_FRAG=$(cat $SELECT_STD_HIST_VARS_SQL_FRAG_FILE | tr '\r\n' ' ' | tr '\r' ' ' | sed 's/\//\\\//g; s/"/\\"/g; s/\@/\\@/g')
 
+SET_SPSS_VAR_NAMES_SQL_FILE=set_spss_var_names.sql
+PERL_SUBST_3="s/SELECT.*?FROM/UPDATE form_part_elem_inputs fpei JOIN/s; s/JOIN [(]SELECT.*?WHERE 1//s; s/[)] x/) x on fpei.id = x.id/g; s/IF[(]f[.]form_date.*?AS answered,//s; s/GROUP BY idsubj/set fpei.spss_var_name = namey/g; s/namey,.*?AS rpnse/namey/s"
+GEN_SET_SPSS_VAR_NAMES_SQL_FILE_CMD="perl -i.orig -p0e \"$PERL_SUBST_3\" $SET_SPSS_VAR_NAMES_SQL_FILE"
+
 LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME"
 eval $LOG_FIRST_LINE_CMD >> $LOGFILE #Write start time to log file
 while read -r -n 6 PATIENTID
@@ -212,5 +216,10 @@ cp $INSTMYSQLFILE $ADD_VAR_LABELS_SQL_FILE
 echo $GEN_SPSS_ADD_VAR_LABELS_FILE_CMD
 eval $GEN_SPSS_ADD_VAR_LABELS_FILE_CMD
 
+cp $INSTMYSQLFILE $SET_SPSS_VAR_NAMES_SQL_FILE
+echo $GEN_SET_SPSS_VAR_NAMES_SQL_FILE_CMD
+eval $GEN_SET_SPSS_VAR_NAMES_SQL_FILE_CMD
+
 printGenerateSpssFileCmd $RECODE_VARS_SQL_FILE
 printGenerateSpssFileCmd $ADD_VAR_LABELS_SQL_FILE
+rm *.orig

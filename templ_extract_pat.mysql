@@ -36,12 +36,12 @@ FROM
 SELECT
   IF(f.form_date IS NOT null, f.form_date, @blank)                                                 AS date_formulaire,
   f.visit_month                                                                                    AS mois_visite,
+  @form_exists := f.id IS NOT null																   AS form_exists,
+  @idsbj                                                                                           AS idsubj,
+  @heading_row := @idsbj = @headingid                                                              AS heading_row,
+  @answered := fr.id IS NOT null                                                                   AS answered,
   fpe.type_resp_inputs, fp.part_idx, fpe.elem_idx, fpei.id, fpei.name, fpei.pos, fpei.val,
   fpei.spss_var_name,																		  	   /* MISC VARS */ 
-  @idsbj                                                                                           AS idsubj,
-  @heading_row := idsubj = @headingid                                                              AS heading_row,
-  @form_exists := f.id IS NOT null																   AS form_exists,
-  @answered := fr.id IS NOT null                                                                   AS answered,
   @nominal := fpe.type_resp_inputs IN ('cb', 'r', 'c') AND
                 (fpei.text_fr IS NOT null OR fpei.val IS NOT null) AND
                 fpei.name NOT like '%nom' AND fpei.name NOT like '%name'                           AS nominal,
@@ -49,7 +49,7 @@ SELECT
   @vn := fpei.name AS vn,
   @ith := fpei.val                                                                                 AS ith,
   @addprecis := fpei.type_fld_details IS NOT null                                                  AS addprecis,
-  @varname_suffix := IF(@nominal, CONCAT(@spacer, @ith), '')                                       AS varname_suffix,
+  @varname_suffix := IF(@nominal AND @ith IS NOT null, CONCAT(@spacer, @ith), '')                  AS varname_suffix,
   @qname := CONCAT(fpei.name, @varname_suffix)                                                     AS qualname,
   @name2 := IF(@nominal, @qname, fpei.name)                                                        AS name2,
   @name3 := REPLACE(@name2, 'comportement_avec_partenaires_statut', 'caps')			   AS name3,
