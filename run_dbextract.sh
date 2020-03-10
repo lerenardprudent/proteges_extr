@@ -86,7 +86,6 @@ RECODE_VARS_SQL_FRAG_SED='s/\//\\\//g; s/"/\\"/g; s/\@/\\@/g'
 
 if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 	FORM_TYPE_ID=3
-	RECODE_VARS_SQL_FRAG_SED="${RECODE_VARS_SQL_FRAG_SED}; s/spss_var_name/vn/g"
 elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
 	FORM_TYPE_ID=11
 fi
