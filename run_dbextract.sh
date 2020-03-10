@@ -99,7 +99,7 @@ ADD_VAR_LABELS_SQL_FILE=label_short_vars.sql
 ORDER_MYSQL_FRAG=$(sed -n "/ORDER BY.*$/p" $MYSQLQUERYFILE)
 
 MYSQLOUTFILE=$(generateExtractionOutfileName)
-PERL_SUBST_1="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL_FRAG/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g"
+PERL_SUBST_1="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s; s/GROUP BY.*$/WHERE nominal $ORDER_MYSQL_FRAG/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g"
 GEN_SPSS_RECODE_VARS_FILE_CMD="perl -i.orig -p0e '$PERL_SUBST_1' $RECODE_VARS_SQL_FILE"
 ADD_VAR_LABELS_SQL_FRAG_FILE=frag_add_var_labels.mysql
 ADD_VAR_LABELS_FRAG=$(cat $ADD_VAR_LABELS_SQL_FRAG_FILE | sed 's/\//\\\//g; s/"/\\"/g')
