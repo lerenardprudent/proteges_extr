@@ -48,6 +48,9 @@ SELECT
   @pvn := @vn,
   @vn := fpei.name AS vn,
   @ith := fpei.val                                                                                 AS ith,
+  @date_var := fr.val REGEXP '^[0-9\-]{2}\/[a-z]{3}\/[0-9\-]{2}$'                                  AS date_var,
+  @converted_date := IF(@date_var,
+	TIMESTAMPDIFF(SECOND, '1582-10-14', STR_TO_DATE(fr.val, "%d/%b/%Y")), 0)                       AS converted_date,
   @addprecis := fpei.type_fld_details IS NOT null                                                  AS addprecis,
   @varname_suffix := IF(@nominal AND @ith IS NOT null, CONCAT(@spacer, @ith), '')                  AS varname_suffix,
   @qname := CONCAT(fpei.name, @varname_suffix)                                                     AS qualname,
@@ -58,7 +61,7 @@ SELECT
   @namey_pr := CONCAT(@namey, @varprecissuffix)                                                    AS nameypr,
   @text := IF( fpei.text_fr IS NOT null, fpei.text_fr,
              IF(fpei.val IS NOT null, fpei.val, IF(fpei.pos IS NOT null, fpei.pos, @dunno)))       AS text,
-  @texte := IF(@answered, REPLACE(@text, @sep, @sepreplacement), @blank)                           AS texte,
+  @texte := IF(@answered, IF(@date_var, @converted_date, REPLACE(@text, @sep, @sepreplacement)), @blank)                           AS texte,
   @safeval := IF(@answered, REPLACE(fr.val, @sep, @sepreplacement), @blank)                        AS safeval,
   @safeprecis := IF(@answered, REPLACE(fr.resp_precision, @sep, @sepreplacement), @blank)          AS precis,
   @reponse := IF(fpe.type_resp_inputs IN ('cb', 'r', 'c') AND
