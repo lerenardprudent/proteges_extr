@@ -142,14 +142,12 @@ do
 		INSTMYSQLFILE=$INSTMYSQLCOLLATEFILE
 		MYSQL_CMD=$MYSQL_CMD_W_UTF_CHARSET
 	fi
-	
-	MYSQLINFILE=$INSTMYSQLFILE
 		
 	if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 		GEN_STD_SQL="sed \"s/^JOIN form_part_elem_inputs.*$/\0 JOIN std_vars sv ON fpei.name LIKE CONCAT(sv.varname, '%')/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g\" $INSTMYSQLFILE > $STD_SQL_FILE"
 		echo $GEN_STD_SQL
 		eval $GEN_STD_SQL
-		MYSQLINFILE=$STD_SQL_FILE
+		INSTMYSQLFILE=$STD_SQL_FILE
 	elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
 		CONC="CONCAT(fpei.name, '_', idx)"
 		CONC2="CONCAT(fpei.name, '_', idx, '_', idy)"
@@ -162,10 +160,10 @@ do
 		echo $PERL_SUBST3_CMD
 		eval $PERL_SUBST3_CMD
 		
-		MYSQLINFILE=$STD_HIST_SQL_FILE
-	fi	
-	
-	CMD1="$MYSQL_CMD -e 'source $MYSQLINFILE' > $INTERMED_OUT_FILE"
+		INSTMYSQLFILE=$STD_HIST_SQL_FILE
+	fi
+
+	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
 	CMD2="cat $INTERMED_OUT_FILE | while read; do $SED '$SEDTRANSFORMATIONS' | $CONVERTFROMUTF8CMD; done >> $MYSQLOUTFILE" #Shell command to run MYSQL query and clean up output
    	echo "($PATIENTID) $CMD1"
    	eval $CMD1
