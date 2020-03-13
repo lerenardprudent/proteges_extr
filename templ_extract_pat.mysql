@@ -13,7 +13,6 @@ SET @worstcasevarqualifier := CONCAT(@spacer, "99", @varprecissuffix);
 SET @minvarlengforshortening := @spssvarlengmax - CHAR_LENGTH(@worstcasevarqualifier);
 SET @ith := 1;
 SET @vn := "";
-SET @pvn := "";
 SET @dunno := "??";
 SET @recode_suffix := "Rc";
 SET @rc := ' ';
@@ -44,15 +43,14 @@ SELECT
   fpei.spss_var_name,																		  	   /* MISC VARS */ 
   @nominal := fpe.type_resp_inputs IN ('cb', 'r', 'c') AND
                 (fpei.text_fr IS NOT null OR fpei.val IS NOT null) AND
-                fpei.name NOT like '%nom' AND fpei.name NOT like '%name'                           AS nominal,
-  @pvn := @vn,
-  @vn := fpei.name AS vn,
+                fpei.name NOT like '%nom' AND fpei.name NOT like '%name'               			   AS nominal,
+  @date_var := fpei.name LIKE '%date%'                             								   AS date_var,
+  @vn := fpei.name 																				   AS vn,
   @ith := fpei.val                                                                                 AS ith,
-  @date_var := @vn LIKE '%date%'                                  								   AS date_var,
   @addprecis := fpei.type_fld_details IS NOT null                                                  AS addprecis,
   @varname_suffix := IF(@nominal AND @ith IS NOT null, CONCAT(@spacer, @ith), '')                  AS varname_suffix,
-  @qname := CONCAT(fpei.name, @varname_suffix)                                                     AS qualname,
-  @name2 := IF(@nominal, @qname, fpei.name)                                                        AS name2,
+  @qname := CONCAT(@vn, @varname_suffix)                                                     	   AS qualname,
+  @name2 := IF(@nominal, @qname, @vn)                                                        	   AS name2,
   @shorter_name := REPLACE(@name2, 'comportement_avec_partenaires_statut', 'caps')			       AS shorter_name,
   @shortest_name := PREG_REPLACE('/([^_])[aeiou]/', "$1", @shorter_name) 				           AS shortest_name,
   @namey := IF(CHAR_LENGTH(@name2) >= @minvarlengforshortening, @shortest_name, @name2)     	   AS namey,
@@ -62,9 +60,7 @@ SELECT
   @texte := IF(@answered, REPLACE(@text, @sep, @sepreplacement), @blank)                           AS texte,
   @safeval := IF(@answered, REPLACE(fr.val, @sep, @sepreplacement), @blank)                        AS safeval,
   @safeprecis := IF(@answered, REPLACE(fr.resp_precision, @sep, @sepreplacement), @blank)          AS precis,
-  @reponse := IF(fpe.type_resp_inputs IN ('cb', 'r', 'c') AND
-                (fpei.text_fr IS NOT null OR fpei.val IS NOT null) AND
-                fpei.name NOT like '%nom' AND fpei.name NOT like '%name', @texte, @safeval)        AS rpnse
+  @reponse := IF(@nominal, @texte, @safeval)        											   AS rpnse
 /* END VAR BODY */
 FROM
 (SELECT id, part_idx FROM form_parts WHERE form_type_id = @formtype) fp
