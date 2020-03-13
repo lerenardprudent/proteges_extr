@@ -17,7 +17,7 @@ USE_COLLATED_MYSQL_FILE=./use_collated.sh
 USE_COLLATED=0
 DO_SELECT_STD_VAR_EXTRACTION_FILE=./do_std.sh
 DO_SELECT_STD_VAR_EXTRACTION_INSTEAD=0
-DO__STD_HIST_EXTRACTION_FILE=./do_std_hist.sh
+DO_STD_HIST_EXTRACTION_FILE=./do_std_hist.sh
 DO_STD_HIST_EXTRACTION_INSTEAD=0
 
 FORM_TYPE_ID=1
@@ -26,7 +26,7 @@ sourceFile $CREDENTIALS_FILE
 sourceFile $REGEX_FUNC_FILE
 sourceFile $USE_COLLATED_MYSQL_FILE
 sourceFile $DO_SELECT_STD_VAR_EXTRACTION_FILE
-sourceFile $DO__STD_HIST_EXTRACTION_FILE
+sourceFile $DO_STD_HIST_EXTRACTION_FILE
 
 MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
 MYSQL_CMD_W_UTF_CHARSET="$MYSQL_CMD --default-character-set=utf8"
@@ -88,14 +88,16 @@ RECODE_VARS_FRAG=$(eval $READ_RECODE_VARS_FRAG_CMD)
 RECODE_VARS_SQL_FILE=recode_vars.sql
 ADD_VAR_LABELS_SQL_FILE=label_short_vars.sql
 ORDER_MYSQL_FRAG=$(sed -n "/ORDER BY.*$/p" $MYSQLQUERYFILE)
+RECODE_VARS_WHERE_AND_ORDER_FRAG="WHERE nominal $ORDER_MYSQL_FRAG"
 
 if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 	FORM_TYPE_ID=3
 elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
 	FORM_TYPE_ID=11
+	RECODE_VARS_WHERE_AND_ORDER_FRAG="WHERE custom_nominal ORDER BY idx, pos, idy"
 fi
 
-PERL_SUBST_1="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s; s/GROUP BY.*$/WHERE nominal $ORDER_MYSQL_FRAG/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g"
+PERL_SUBST_1="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s; s/GROUP BY.*$/$RECODE_VARS_WHERE_AND_ORDER_FRAG/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g"
 MYSQLOUTFILE=$(generateExtractionOutfileName)
 ADD_VAR_LABELS_SQL_FRAG_FILE=frag_add_var_labels.mysql
 ADD_VAR_LABELS_FRAG=$(cat $ADD_VAR_LABELS_SQL_FRAG_FILE | sed 's/\//\\\//g; s/"/\\"/g')
@@ -153,7 +155,7 @@ do
 		echo $GEN_STD_HIST_SQL
 		eval $GEN_STD_HIST_SQL
 		
-		PERL_SUBST_1="$PERL_SUBST_1; s/JOIN form_part_elem_inputs.*?WHERE 1/JOIN form_part_elem_inputs fpei ON fpei.form_part_elem_id = fpe.id JOIN idys iz on fpei.name = iz.var_name/g"
+		PERL_SUBST_1="$PERL_SUBST_1; s/idxs iz/idys iz/g; s/\@mc :=.*/\@vnx := IF(idy IS NOT null, CONCAT(\"_\", idy), \"\") AS vnx, \@customvn := CONCAT(\@vn, \@vnx) AS customvn, idx, idy, fpei.name like \"std_treatment%\" AS custom_nominal/g; s/, spss_var_name/, customvn/g"
 		PERL_SUBST3_CMD="perl -i.orig -p0e \"s/\@vn := fpei.*?AS rpnse/$SELECT_STD_HIST_VARS_SQL_FRAG/s; s/GROUP_CONCAT.*?ORDER/GROUP_CONCAT(IF(heading_row, clust_name, clust_val) ORDER/s\" $STD_HIST_SQL_FILE"
 		echo $PERL_SUBST3_CMD
 		eval $PERL_SUBST3_CMD
