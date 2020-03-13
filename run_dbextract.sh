@@ -65,7 +65,8 @@ convertsecs() {
 printGenerateSpssFileCmd() {
 	OUTFILE=`basename $1 sql`
 	OUTFILE="${OUTFILE}sps"
-	 printf "** TO GENERATE '$OUTFILE': $MYSQL_CMD -N -e 'source $1' | sed 's/\./.\\\n/g' > $OUTFILE\n" 
+	EXTRA="" && [[ ! -z $2 ]] && EXTRA=" && echo '$2' >> $OUTFILE"
+	printf "** TO GENERATE '$OUTFILE': \"$MYSQL_CMD -N -e 'source $1' | sed 's/\./.\\\n/g' > $OUTFILE && echo 'alter type date_formulaire(date9).' >> $OUTFILE$EXTRA\"\n" 
 }
 	
 DATETIMECMD='date +"%D %T"'
@@ -88,7 +89,7 @@ RECODE_VARS_FRAG=$(eval $READ_RECODE_VARS_FRAG_CMD)
 RECODE_VARS_SQL_FILE=recode_vars.sql
 ADD_VAR_LABELS_SQL_FILE=label_short_vars.sql
 ORDER_MYSQL_FRAG=$(sed -n "/ORDER BY.*$/p" $MYSQLQUERYFILE)
-RECODE_VARS_WHERE_AND_ORDER_FRAG="WHERE nominal $ORDER_MYSQL_FRAG"
+RECODE_VARS_WHERE_AND_ORDER_FRAG="WHERE nominal or date_var $ORDER_MYSQL_FRAG"
 
 if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 	FORM_TYPE_ID=3
@@ -155,7 +156,7 @@ do
 		echo $GEN_STD_HIST_SQL
 		eval $GEN_STD_HIST_SQL
 		
-		PERL_SUBST_1="$PERL_SUBST_1; s/idxs iz/idys iz/g; s/\@mc :=.*/\@vnx := IF(idy IS NOT null, CONCAT(\"_\", idy), \"\") AS vnx, \@customvn := CONCAT(\@vn, \@vnx) AS customvn, idx, idy, fpei.name like \"std_treatment%\" AS custom_nominal/g; s/, spss_var_name/, customvn/g"
+		PERL_SUBST_1="$PERL_SUBST_1; s/idxs iz/idys iz/g; s/\@mc :=.*/\@vnx := IF(idy IS NOT null, CONCAT(\"_\", idy), \"\") AS vnx, \@customvn := CONCAT(\@vn, \@vnx) AS customvn, idx, idy, fpei.name not like \"%date%\" AS custom_nominal/g; s/, spss_var_name/, customvn/g"
 		PERL_SUBST3_CMD="perl -i.orig -p0e \"s/\@vn := fpei.*?AS rpnse/$SELECT_STD_HIST_VARS_SQL_FRAG/s; s/GROUP_CONCAT.*?ORDER/GROUP_CONCAT(IF(heading_row, clust_name, clust_val) ORDER/s\" $STD_HIST_SQL_FILE"
 		echo $PERL_SUBST3_CMD
 		eval $PERL_SUBST3_CMD
@@ -219,6 +220,6 @@ cp $INSTMYSQLFILE $SET_SPSS_VAR_NAMES_SQL_FILE
 echo $GEN_SET_SPSS_VAR_NAMES_SQL_FILE_CMD
 eval $GEN_SET_SPSS_VAR_NAMES_SQL_FILE_CMD
 
-printGenerateSpssFileCmd $RECODE_VARS_SQL_FILE
+printGenerateSpssFileCmd $RECODE_VARS_SQL_FILE "DELETE VARIABLES FIN."
 printGenerateSpssFileCmd $ADD_VAR_LABELS_SQL_FILE
 rm *.orig

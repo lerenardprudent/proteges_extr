@@ -55,7 +55,7 @@ SELECT
   @name2 := IF(@nominal, @qname, fpei.name)                                                        AS name2,
   @shorter_name := REPLACE(@name2, 'comportement_avec_partenaires_statut', 'caps')			       AS shorter_name,
   @shortest_name := PREG_REPLACE('/([^_])[aeiou]/', "$1", @shorter_name) 				           AS shortest_name,
-  @namey := IF(CHAR_LENGTH(@shorter_name) >= @minvarlengforshortening, @shortest_name, @name2)     AS namey,
+  @namey := IF(CHAR_LENGTH(@name2) >= @minvarlengforshortening, @shortest_name, @name2)     	   AS namey,
   @namey_pr := CONCAT(@namey, @varprecissuffix)                                                    AS nameypr,
   @text := IF( fpei.text_fr IS NOT null, fpei.text_fr,
              IF(fpei.val IS NOT null, fpei.val, IF(fpei.pos IS NOT null, fpei.pos, @dunno)))       AS text,

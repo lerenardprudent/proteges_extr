@@ -4,6 +4,9 @@
 *.swp
 *.orig
 *.sps
+*.sav
+*.xlsx
+/ludivine/*
 cred.sh
 regex_func.sh
 use_collated.sh
