@@ -113,7 +113,7 @@ SET_SPSS_VAR_NAMES_SQL_FILE=set_spss_var_names.sql
 PERL_SUBST_3="s/SELECT.*?FROM/UPDATE form_part_elem_inputs fpei JOIN/s; s/JOIN [(]SELECT.*?WHERE 1//s; s/[)] x/) x on fpei.id = x.id/g; s/IF[(]f[.]form_date.*?AS answered,//s; s/GROUP BY idsubj/set fpei.spss_var_name = namey/g; s/namey,.*?AS rpnse/namey/s"
 GEN_SET_SPSS_VAR_NAMES_SQL_FILE_CMD="perl -i.orig -p0e \"$PERL_SUBST_3\" $SET_SPSS_VAR_NAMES_SQL_FILE"
 
-LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME"
+LOG_FIRST_LINE_CMD="formatLogFileEntry 'START' '00:00:00' 0 $PATIENTNO $PATIENTTOTAL $STARTTIME\n"
 eval $LOG_FIRST_LINE_CMD >> $LOGFILE #Write start time to log file
 while read -r -n 6 PATIENTID
 do

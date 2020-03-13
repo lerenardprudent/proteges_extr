@@ -8,6 +8,7 @@
 *.xlsx
 /ludivine/*
 cred.sh
+do*.sh
 regex_func.sh
 use_collated.sh
 testpatids
