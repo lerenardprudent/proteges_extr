@@ -89,7 +89,6 @@ RECODE_VARS_FRAG=$(eval $READ_RECODE_VARS_FRAG_CMD)
 RECODE_VARS_SQL_FILE=recode_vars.sql
 ADD_VAR_LABELS_SQL_FILE=add_var_labels.sql
 ORDER_MYSQL_FRAG=$(sed -n "/ORDER BY.*$/p" $MYSQLQUERYFILE)
-RECODE_VARS_WHERE_AND_ORDER_FRAG=""
 
 if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 	FORM_TYPE_ID=3
@@ -142,12 +141,14 @@ do
 		INSTMYSQLFILE=$INSTMYSQLCOLLATEFILE
 		MYSQL_CMD=$MYSQL_CMD_W_UTF_CHARSET
 	fi
+	
+	MYSQLINFILE=$INSTMYSQLFILE
 		
 	if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 		GEN_STD_SQL="sed \"s/^JOIN form_part_elem_inputs.*$/\0 JOIN std_vars sv ON fpei.name LIKE CONCAT(sv.varname, '%')/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g\" $INSTMYSQLFILE > $STD_SQL_FILE"
 		echo "## Step 2A >> $GEN_STD_SQL"
 		eval $GEN_STD_SQL
-		INSTMYSQLFILE=$STD_SQL_FILE
+		MYSQLINFILE=$STD_SQL_FILE
 	elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
 		CONC="CONCAT(fpei.name, '_', idx)"
 		CONC2="CONCAT(fpei.name, '_', idx, '_', idy)"
@@ -161,12 +162,12 @@ do
 		echo "## STEP 2BII >> $PERL_SUBST3_CMD"
 		eval $PERL_SUBST3_CMD
 		
-		INSTMYSQLFILE=$STD_HIST_SQL_FILE
+		MYSQLINFILE=$STD_HIST_SQL_FILE
 	fi
 
 	GEN_SPSS_RECODE_VARS_FILE_CMD="perl -i.orig -p0e '$PERL_SUBST_1' $RECODE_VARS_SQL_FILE"
 	
-	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
+	CMD1="$MYSQL_CMD -e 'source $MYSQLINFILE' > $INTERMED_OUT_FILE"
 	CMD2="cat $INTERMED_OUT_FILE | while read; do $SED '$SEDTRANSFORMATIONS' | $CONVERTFROMUTF8CMD; done >> $MYSQLOUTFILE" #Shell command to run MYSQL query and clean up output
    	echo "($PATIENTID) $CMD1"
    	eval $CMD1
