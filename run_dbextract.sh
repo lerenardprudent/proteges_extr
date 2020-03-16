@@ -89,7 +89,6 @@ RECODE_VARS_FRAG=$(eval $READ_RECODE_VARS_FRAG_CMD)
 RECODE_VARS_SQL_FILE=recode_vars.sql
 ADD_VAR_LABELS_SQL_FILE=add_var_labels.sql
 ORDER_MYSQL_FRAG=$(sed -n "/ORDER BY.*$/p" $MYSQLQUERYFILE)
-RECODE_VARS_WHERE_AND_ORDER_FRAG=""
 
 if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 	FORM_TYPE_ID=3
@@ -131,46 +130,49 @@ do
 		SED_PAT_ID_SUBSTS="$SED_PAT_ID_SUBSTS ; s/\($REGEX_FUNC_DEFAULT\)[(]'\/\([^\/]\+\)\/',\([^,]\+\), \([^)]\+\)[)]/$REGEX_FUNC(\4, \'\2\', \3)/g"
 	fi
 	SED_SUBST_PRE_CMD="$SED \"$SED_PAT_ID_SUBSTS\" $MYSQLQUERYFILE > $INSTMYSQLFILE"
-	echo $SED_SUBST_PRE_CMD
+	echo "## STEP 1 >> $SED_SUBST_PRE_CMD"
 	eval $SED_SUBST_PRE_CMD
 	
 	if [ $USE_COLLATED -eq 1 ] ; then
 		SED_SUBST_W_COLLATE="$SED_PAT_ID_SUBSTS ; s/[^_]REPLACE[(][a-z0-9.@_]\+/\0 $UTF8_COLLATE/g; s/;;/ $UTF8_COLLATE;/g; s/WHERE [a-z_]\+ = @[a-z]\+/\0 $UTF8_COLLATE/g"
 		SED_SUBST_CMD="$SED \"$SED_SUBST_W_COLLATE\" $MYSQLQUERYFILE > $INSTMYSQLCOLLATEFILE" #Copy MYSQL query template and substitute in patient id
-		echo $SED_SUBST_CMD
+		echo "## STEP 1A >> $SED_SUBST_CMD"
 		eval $SED_SUBST_CMD
 		INSTMYSQLFILE=$INSTMYSQLCOLLATEFILE
 		MYSQL_CMD=$MYSQL_CMD_W_UTF_CHARSET
 	fi
+	
+	MYSQLINFILE=$INSTMYSQLFILE
 		
 	if [ $DO_SELECT_STD_VAR_EXTRACTION_INSTEAD -eq 1 ]; then
 		GEN_STD_SQL="sed \"s/^JOIN form_part_elem_inputs.*$/\0 JOIN std_vars sv ON fpei.name LIKE CONCAT(sv.varname, '%')/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g\" $INSTMYSQLFILE > $STD_SQL_FILE"
-		echo $GEN_STD_SQL
+		echo "## Step 2A >> $GEN_STD_SQL"
 		eval $GEN_STD_SQL
-		INSTMYSQLFILE=$STD_SQL_FILE
+		MYSQLINFILE=$STD_SQL_FILE
 	elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
 		CONC="CONCAT(fpei.name, '_', idx)"
 		CONC2="CONCAT(fpei.name, '_', idx, '_', idy)"
 		GEN_STD_HIST_SQL="sed \"s/^LEFT JOIN form_responses.*$/LEFT JOIN ( SELECT form_id, var_name, group_concat(val separator ';') val, 'dummy' id from form_responses group by form_id, var_name) fr ON fr.form_id = f.id and fr.var_name = concat(iz.var_name, '_', iz.idx)/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g; s/^JOIN form_part_elem_inputs.*$/\0 JOIN idxs iz ON fpei.name = iz.var_name/g; s/^\(\s\+ORDER BY\).*$/\1 idx, pos/g\" $INSTMYSQLFILE > $STD_HIST_SQL_FILE"
 		
-		echo $GEN_STD_HIST_SQL
+		echo "## Step 2B >> $GEN_STD_HIST_SQL"
 		eval $GEN_STD_HIST_SQL
 		
 		PERL_SUBST_1="$PERL_SUBST_1; s/idxs iz/idys iz/g; s/\@mc :=.*/\@vnx := IF(idy IS NOT null, CONCAT(\"_\", idy), \"\") AS vnx, \@customvn := CONCAT(\@vn, \@vnx) AS customvn, idx, idy/g; s/, spss_var_name/, customvn/g; s/\@nominal :=.*?AS nominal/\@nominal := fpei.name NOT LIKE \"%date%\" AS nominal/s"
 		PERL_SUBST3_CMD="perl -i.orig -p0e \"s/\@vn := fpei.*?AS rpnse/$SELECT_STD_HIST_VARS_SQL_FRAG/s; s/GROUP_CONCAT.*?ORDER/GROUP_CONCAT(IF(heading_row, clust_name, clust_val) ORDER/s\" $STD_HIST_SQL_FILE"
-		echo $PERL_SUBST3_CMD
+		echo "## STEP 2BII >> $PERL_SUBST3_CMD"
 		eval $PERL_SUBST3_CMD
 		
-		INSTMYSQLFILE=$STD_HIST_SQL_FILE
+		MYSQLINFILE=$STD_HIST_SQL_FILE
 	fi
 
 	GEN_SPSS_RECODE_VARS_FILE_CMD="perl -i.orig -p0e '$PERL_SUBST_1' $RECODE_VARS_SQL_FILE"
 	
-	CMD1="$MYSQL_CMD -e 'source $INSTMYSQLFILE' > $INTERMED_OUT_FILE"
+	CMD1="$MYSQL_CMD -e 'source $MYSQLINFILE' > $INTERMED_OUT_FILE"
 	CMD2="cat $INTERMED_OUT_FILE | while read; do $SED '$SEDTRANSFORMATIONS' | $CONVERTFROMUTF8CMD; done >> $MYSQLOUTFILE" #Shell command to run MYSQL query and clean up output
    	echo "($PATIENTID) $CMD1"
    	eval $CMD1
-	echo $CMD2
+	
+	echo "## STEP 4 >> $CMD2"
 	eval $CMD2
    	
 	CALCPROGRESSCMD="awk 'BEGIN{printf \"%.2f\", "$PATIENTNO*"100 / $PATIENTTOTAL}'"
