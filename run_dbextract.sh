@@ -65,7 +65,7 @@ convertsecs() {
 printGenerateSpssFileCmd() {
 	OUTFILE=`basename $1 sql`
 	OUTFILE="${OUTFILE}sps"
-	EXTRA="" && [[ ! -z $2 ]] && EXTRA=" && echo '$2' >> $OUTFILE"
+	EXTRA="" && [[ ! -z $2 ]] && EXTRA=" && printf \"$2\" >> $OUTFILE"
 	printf "** TO GENERATE '$OUTFILE': \"$MYSQL_CMD -N -e 'source $1' | sed 's/\./.\\\n/g' > $OUTFILE$EXTRA\"\n" 
 }
 	
@@ -231,6 +231,6 @@ eval $COPY_CMD
 echo $GEN_SET_SPSS_VAR_NAMES_SQL_FILE_CMD
 eval $GEN_SET_SPSS_VAR_NAMES_SQL_FILE_CMD
 
-printGenerateSpssFileCmd $RECODE_VARS_SQL_FILE "ALTER TYPE date_formulaire(date9). DELETE VARIABLES FIN."
+printGenerateSpssFileCmd $RECODE_VARS_SQL_FILE "ALTER TYPE date_formulaire(date9).\\\nDELETE VARIABLES FIN."
 printGenerateSpssFileCmd $ADD_VAR_LABELS_SQL_FILE
 rm *.orig
