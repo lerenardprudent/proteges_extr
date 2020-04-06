@@ -4,11 +4,6 @@ sourceFile() {
     [[ -f "$1" ]] && source "$1"
 }
 
-generateExtractionOutfileName() {
-	CMD="printf \"extr_%s_%s_%s.csv\" `$MYSQL_CMD -N -e \"select code from form_types where id = $FORM_TYPE_ID\"` `date '+%Y-%m-%d'` `date '+%H~%M~%S'`"
-	eval $CMD
-}
-
 CREDENTIALS_FILE=./cred.sh
 REGEX_FUNC_FILE=./regex_func.sh
 REGEX_FUNC=PREG_REPLACE
@@ -20,7 +15,7 @@ DO_SELECT_STD_VAR_EXTRACTION_INSTEAD=0
 DO_STD_HIST_EXTRACTION_FILE=./do_std_hist.sh
 DO_STD_HIST_EXTRACTION_INSTEAD=0
 
-FORM_TYPE_ID=1
+FORM_TYPE_ID=2
 
 sourceFile $CREDENTIALS_FILE
 sourceFile $REGEX_FUNC_FILE
@@ -28,8 +23,15 @@ sourceFile $USE_COLLATED_MYSQL_FILE
 sourceFile $DO_SELECT_STD_VAR_EXTRACTION_FILE
 sourceFile $DO_STD_HIST_EXTRACTION_FILE
 
-MYSQL_CMD="mysql -B -u $DBUSR -p$DBPWD $DBNAM"
+MYSQL_CMD="mysql -B -u $DBUSR -p\"$DBPWD\" $DBNAM"
 MYSQL_CMD_W_UTF_CHARSET="$MYSQL_CMD --default-character-set=utf8"
+
+generateExtractionOutfileName() {
+	GET_CODE_CMD="$MYSQL_CMD -N -e \"select code from form_types where id = $FORM_TYPE_ID\""
+	CODE=$(eval $GET_CODE_CMD)
+	CMD="printf \"extr_%s.csv\" $CODE" # `date '+%Y-%m-%d'` `date '+%H~%M~%S'`"
+	eval $CMD
+}
 
 MYSQLQUERYFILE=templ_extract_pat.mysql
 INSTMYSQLFILE=inst_extract_pat.sql
@@ -68,6 +70,9 @@ printGenerateSpssFileCmd() {
 	EXTRA="" && [[ ! -z $2 ]] && EXTRA=" && printf \"$2\" >> $OUTFILE"
 	printf "** TO GENERATE '$OUTFILE': \"$MYSQL_CMD -N -e 'source $1' | sed 's/\./.\\\n/g' > $OUTFILE$EXTRA\"\n" 
 }
+
+MYSQLOUTFILE=$(generateExtractionOutfileName)
+eval $RM $MYSQLOUTFILE
 	
 DATETIMECMD='date +"%D %T"'
 STARTTIME=$(eval $DATETIMECMD)
@@ -98,7 +103,6 @@ elif [ $DO_STD_HIST_EXTRACTION_INSTEAD -eq 1 ]; then
 fi
 
 PERL_SUBST_1="s/SELECT.*?FROM/$RECODE_VARS_FRAG/s; s/GROUP BY.*$/WHERE nominal or date_var $ORDER_MYSQL_FRAG/g; s/\(formtype :=\)\s[0-9]\+/\1 $FORM_TYPE_ID/g"
-MYSQLOUTFILE=$(generateExtractionOutfileName)
 ADD_VAR_LABELS_SQL_FRAG_FILE=frag_add_var_labels.mysql
 ADD_VAR_LABELS_FRAG=$(cat $ADD_VAR_LABELS_SQL_FRAG_FILE | sed 's/\//\\\//g; s/"/\\"/g')
 PERL_SUBST_2="s/SELECT.*?FROM/$ADD_VAR_LABELS_FRAG/s; s/GROUP BY.*$/$ORDER_MYSQL_FRAG/g"

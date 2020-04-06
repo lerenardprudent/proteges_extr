@@ -1,7 +1,7 @@
 SET SESSION group_concat_max_len=99999;
 SET @headingid := "000000";;
 SET @idsbj := @headingid;;
-SET @formtype := 1;
+SET @formtype := 2;
 SET @sep := ';';
 SET @sepreplacement := @sep;
 SET @rowterminator := 'FIN';
@@ -20,7 +20,6 @@ SET @rc := ' ';
 SELECT
   IF(heading_row, "idsubj", idsubj)                   							AS idsubj,
   IF(heading_row, "date_formulaire", IF( form_exists, date_formulaire, @blank)) AS date_formulaire,
-  IF(heading_row, "mois_visite", IF(form_exists, mois_visite, @blank))         	AS mois_visite,
   CONCAT(
     GROUP_CONCAT(
       IF(heading_row,
@@ -34,7 +33,6 @@ FROM
 (
 SELECT
   IF(f.form_date IS NOT null, f.form_date, @blank)                                                 AS date_formulaire,
-  f.visit_month                                                                                    AS mois_visite,
   @form_exists := f.id IS NOT null																   AS form_exists,
   @idsbj                                                                                           AS idsubj,
   @heading_row := @idsbj = @headingid                                                              AS heading_row,
