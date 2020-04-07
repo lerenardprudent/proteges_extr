@@ -15,7 +15,7 @@ DO_SELECT_STD_VAR_EXTRACTION_INSTEAD=0
 DO_STD_HIST_EXTRACTION_FILE=./do_std_hist.sh
 DO_STD_HIST_EXTRACTION_INSTEAD=0
 
-FORM_TYPE_ID=2
+FORM_TYPE_ID=1
 
 sourceFile $CREDENTIALS_FILE
 sourceFile $REGEX_FUNC_FILE
@@ -44,6 +44,9 @@ PATIENTNO=0
 PATIENTIDSFILE=testpatids
 PATIENTTOTAL=$(wc -l $PATIENTIDSFILE | awk '{print $1}')
 RM='/bin/rm -f'
+
+UPDATE_MYSQL_TEMPLATE_PERL_CMD="perl -i.orig -p0e \"s/(SET \@formtype :=) ([0-9]+)/\1 $FORM_TYPE_ID/s\" $MYSQLQUERYFILE"
+eval $UPDATE_MYSQL_TEMPLATE_PERL_CMD
 
 formatLogFileEntry() {
 	PRINTF_CMD="LANG=C printf '(%6s) %10s {%6.2f%%, %3d/%3d, %16s}' $1 $2 $3 $4 $5 $6"
@@ -214,6 +217,7 @@ do
 done < "$PATIENTIDSFILE"
 printf "============================\nTOTAL ELAPSED TIME: %s\n============================" $(convertsecs $TIMETAKEN) >> $LOGFILE
 
+exit
 COPY_CMD="cp $MYSQLINFILE $RECODE_VARS_SQL_FILE"
 echo $COPY_CMD
 eval $COPY_CMD

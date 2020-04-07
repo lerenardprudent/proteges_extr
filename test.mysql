@@ -1,7 +1,7 @@
 SET SESSION group_concat_max_len=99999;
 SET @headingid := "000000";;
 SET @idsbj := @headingid;;
-SET @formtype := 1;
+SET @formtype := 69;
 SET @sep := ';';
 SET @sepreplacement := @sep;
 SET @rowterminator := 'FIN';
@@ -23,8 +23,8 @@ SELECT
   CONCAT(
     GROUP_CONCAT(
       IF(heading_row,
-        IF(addprecis, IF(dpprecis, namedpheader, CONCAT(namey, @sep, nameypr)), namey),
-        IF(addprecis, CONCAT(rpnse, @sep, IF(dpprecis, precisdp, precis)),  rpnse)
+        IF(addprecis, CONCAT(namey, @sep, nameypr), namey),
+        IF(addprecis, CONCAT(rpnse, @sep, precis),  rpnse)
       )
       ORDER BY part_idx, elem_idx, pos, val, name
       SEPARATOR ';'
@@ -46,7 +46,6 @@ SELECT
   @vn := fpei.name 																				   AS vn,
   @ith := fpei.val                                                                                 AS ith,
   @addprecis := fpei.type_fld_details IS NOT null                                                  AS addprecis,
-  @dateperiodprecis := fpei.type_fld_details = 'dp'                                                AS dpprecis,
   @varname_suffix := IF(@nominal AND @ith IS NOT null, CONCAT(@spacer, @ith), '')                  AS varname_suffix,
   @qname := CONCAT(@vn, @varname_suffix)                                                     	   AS qualname,
   @name2 := IF(@nominal, @qname, @vn)                                                        	   AS name2,
@@ -54,13 +53,11 @@ SELECT
   @shortest_name := PREG_REPLACE('/([^_])[aeiou]/', "$1", @shorter_name) 				           AS shortest_name,
   @namey := IF(CHAR_LENGTH(@name2) >= @minvarlengforshortening, @shortest_name, @name2)     	   AS namey,
   @namey_pr := CONCAT(@namey, @varprecissuffix)                                                    AS nameypr,
-  @namedpheader := CONCAT(@namey, @sep, @namey, "_deb_date", @sep, @namey, "_fin_date")            AS namedpheader,
   @text := IF( fpei.text_fr IS NOT null, fpei.text_fr,
              IF(fpei.val IS NOT null, fpei.val, IF(fpei.pos IS NOT null, fpei.pos, @dunno)))       AS text,
   @texte := IF(@answered, REPLACE(@text, @sep, @sepreplacement), @blank)                           AS texte,
   @safeval := IF(@answered, REPLACE(fr.val, @sep, @sepreplacement), @blank)                        AS safeval,
   @safeprecis := IF(@answered, REPLACE(fr.resp_precision, @sep, @sepreplacement), @blank)          AS precis,
-  @safeprecisdp := IF(@answered, CONCAT(fr.resp_precision, @sep, fr.resp_precision_2), CONCAT(@blank, @sep))     AS precisdp,
   @reponse := IF(@nominal, @texte, @safeval)        											   AS rpnse
 /* END VAR BODY */
 FROM
@@ -70,5 +67,6 @@ JOIN form_part_elem_inputs fpei ON fpei.form_part_elem_id = fpe.id
 JOIN (SELECT id, idsubj FROM patients WHERE idsubj = @idsbj) p
 LEFT JOIN forms f ON f.form_type_id = @formtype AND f.patient_id = p.id
 LEFT JOIN form_responses fr ON fr.form_id = f.id AND fr.form_part_elem_input_id = fpei.id
+WHERE 1
 ) x
 GROUP BY idsubj
