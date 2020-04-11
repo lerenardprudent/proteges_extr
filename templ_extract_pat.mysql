@@ -1,14 +1,14 @@
 SET SESSION group_concat_max_len=99999;
 SET @headingid := "000000";;
 SET @idsbj := @headingid;;
-SET @formtype := 1;
+SET @formtype := 2;
 SET @sep := ';';
 SET @sepreplacement := @sep;
 SET @rowterminator := 'FIN';
 SET @varprecissuffix := '_pr';
 SET @blank := '';
-SET @spacer := '__';
-SET @spssvarlengmax := 64;
+SET @spacer := '_';
+SET @spssvarlengmax := 100;
 SET @worstcasevarqualifier := CONCAT(@spacer, "99", @varprecissuffix);
 SET @minvarlengforshortening := @spssvarlengmax - CHAR_LENGTH(@worstcasevarqualifier);
 SET @ith := 1;
@@ -47,7 +47,7 @@ SELECT
   @ith := fpei.val                                                                                 AS ith,
   @addprecis := fpei.type_fld_details IS NOT null                                                  AS addprecis,
   @dateperiodprecis := fpei.type_fld_details = 'dp'                                                AS dpprecis,
-  @varname_suffix := IF(@nominal AND @ith IS NOT null, CONCAT(@spacer, @ith), '')                  AS varname_suffix,
+  @varname_suffix := IF(@nominal AND @ith IS NOT null AND @ith <> 1, CONCAT(@spacer, @ith), '')                  AS varname_suffix,
   @qname := CONCAT(@vn, @varname_suffix)                                                     	   AS qualname,
   @name2 := IF(@nominal, @qname, @vn)                                                        	   AS name2,
   @shorter_name := REPLACE(@name2, 'comportement_avec_partenaires_statut', 'caps')			       AS shorter_name,
@@ -61,7 +61,7 @@ SELECT
   @safeval := IF(@answered, REPLACE(fr.val, @sep, @sepreplacement), @blank)                        AS safeval,
   @safeprecis := IF(@answered, REPLACE(fr.resp_precision, @sep, @sepreplacement), @blank)          AS precis,
   @safeprecisdp := IF(@answered, CONCAT(fr.resp_precision, @sep, fr.resp_precision_2), CONCAT(@blank, @sep))     AS precisdp,
-  @reponse := IF(@nominal, @texte, @safeval)        											   AS rpnse
+  @reponse := IF(@nominal, IF(@answered, '1', @blank), @safeval)        											   	   AS rpnse
 /* END VAR BODY */
 FROM
 (SELECT id, part_idx FROM form_parts WHERE form_type_id = @formtype) fp
